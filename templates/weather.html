@@ -101,6 +101,7 @@
       display: flex; align-items: center; gap: 12px;
       padding: 14px 22px;
     }
+    .search-bar input[name="city"] { min-width: 0; }
     .search-bar svg { flex-shrink: 0; opacity: .5; }
     .search-bar input {
       flex: 1;
@@ -121,6 +122,15 @@
       transition: background .2s, transform .15s;
     }
     .search-bar button:hover { background: var(--gold-light); transform: scale(1.04); }
+
+    .error-banner {
+      grid-column: 1 / -1;
+      border-color: rgba(255, 110, 110, .45);
+      background: rgba(130, 20, 20, .25);
+      color: #ffd5d5;
+      font-size: 14px;
+      padding: 14px 20px;
+    }
 
     /* ── Main hero card ── */
     .hero {
@@ -296,13 +306,17 @@
 <div class="app">
 
   <!-- Search -->
-  <div class="card search-bar">
+  <form class="card search-bar" method="post" action="{{ url_for('index') }}">
     <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
       <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
     </svg>
-    <input type="text" placeholder="Search city or location…" value="{{ weather.city }}"/>
-    <button>Search</button>
-  </div>
+    <input type="text" name="city" placeholder="Search city or location..." value="{{ weather.city }}"/>
+    <button type="submit">Search</button>
+  </form>
+
+  {% if error %}
+  <div class="card error-banner">{{ error }}</div>
+  {% endif %}
 
   <!-- Hero temp -->
   <div class="card hero">
@@ -313,7 +327,7 @@
     <div>
       <div class="hero-temp">{{ weather.temperature }}°</div>
       <div class="hero-desc">{{ weather.description }}</div>
-      <div class="hero-feels">Feels like {{ weather.temperature }}°</div>
+      <div class="hero-feels">Feels like {{ weather.feels_like }}°</div>
     </div>
   </div>
 
@@ -346,7 +360,7 @@
     </div>
     <div class="card stat">
       <div class="stat-icon">🌡️</div>
-      <div class="stat-value">1013 hPa</div>
+      <div class="stat-value">{{ weather.pressure }} hPa</div>
       <div class="stat-label">Pressure</div>
     </div>
   </div>
@@ -406,14 +420,14 @@
     <!-- Humidity bar -->
     <div class="card detail-card">
       <div class="detail-head">Humidity Detail</div>
-      <div class="bar-val">38%</div>
-      <div class="bar-sub">Comfortable · Dew point 17°C</div>
+      <div class="bar-val">{{ weather.humidity }}%</div>
+      <div class="bar-sub">{{ weather.humidity }}% · Dew point 17°C</div>
       <div style="margin-top:16px;">
         <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:6px;">
           <span>Dry</span><span>Humid</span>
         </div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:38%;"></div>
+          <div class="bar-fill" id="humidity-fill" data-humidity="{{ weather.humidity }}" style="width: 0;"></div>
         </div>
       </div>
     </div>
@@ -445,7 +459,7 @@
           </svg>
         </div>
         <div>
-          <div class="wind-val">18 km/h</div>
+          <div class="wind-val">{{ weather.wind_speed }} km/h</div>
           <div class="wind-sub">North-West<br>Gusts up to 26 km/h</div>
         </div>
       </div>
@@ -454,6 +468,18 @@
   </div><!-- /detail-row -->
 
 </div><!-- /app -->
+
+<script>
+  (function () {
+    var bar = document.getElementById('humidity-fill');
+    if (!bar) return;
+
+    var humidity = parseInt(bar.dataset.humidity || '0', 10);
+    if (isNaN(humidity)) humidity = 0;
+    humidity = Math.max(0, Math.min(100, humidity));
+    bar.style.width = humidity + '%';
+  })();
+</script>
 
 </body>
 </html>
